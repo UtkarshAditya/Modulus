@@ -58,11 +58,20 @@ class Evidence:
 
 @dataclass(frozen=True)
 class RuleHit:
+    """The one hit type shared by rules and the classifier (Phase 3), so
+    Phase 4 fusion can concatenate both without a case split. `source` and
+    `contributing_terms` exist for the classifier's benefit — mirrors
+    `moderation.models.Flag.Source` — and stay at their defaults for a
+    rule-sourced hit.
+    """
+
     rule_id: str
     category: Category
     severity: Severity
+    source: str = "RULE"
     evidence: list[Evidence] = field(default_factory=list)
     reason: str = ""
+    contributing_terms: list[dict] = field(default_factory=list)
 
 
 class Submission(Protocol):

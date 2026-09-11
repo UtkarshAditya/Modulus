@@ -32,6 +32,10 @@ INSTALLED_APPS = [
     "corsheaders",
     # local
     "apps.accounts",
+    "apps.postings",
+    "apps.moderation",
+    "apps.policies",
+    "apps.audit",
 ]
 
 MIDDLEWARE = [

@@ -1,0 +1,9 @@
+# Direct dependencies needed in every environment. Pin loosely to the
+# minor version; let patch releases float.
+Django>=5.0,<5.1
+djangorestframework>=3.17,<3.18
+django-cors-headers>=4.9,<4.10
+celery>=5.6,<5.7
+redis>=8.1,<8.2
+psycopg2-binary>=2.9,<2.10
+python-decouple>=3.8,<3.9

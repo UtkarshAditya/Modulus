@@ -1,0 +1,40 @@
+# --- Python / Django -------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+backend/staticfiles/
+backend/.pytest_cache/
+backend/.coverage
+backend/htmlcov/
+*.sqlite3
+
+# ML artifacts (checksummed, versioned separately from git)
+backend/ml/artifacts/
+
+# Celery beat's runtime schedule db, written into the bind-mounted backend/
+# directory by the beat container — not source, regenerated on every run.
+backend/celerybeat-schedule*
+
+# --- Node / frontend ---------------------------------------------------------
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# --- Env / secrets -----------------------------------------------------------
+.env
+.env.*
+!.env.example
+
+# --- Editors / OS -------------------------------------------------------------
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# --- Claude Code (harness-local, not project source) --------------------------
+.claude/
+
+# --- Docker --------------------------------------------------------------------
+infra/*.log

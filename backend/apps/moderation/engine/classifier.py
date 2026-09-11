@@ -108,6 +108,7 @@ class SklearnClassifier:
                     category=category,
                     severity=MODEL_CATEGORY_SEVERITY[category],
                     source="MODEL",
+                    confidence=round(float(probability), 4),
                     evidence=[Evidence(0, 0, "", note=f"classifier probability {probability:.2f}")],
                     reason=(
                         f"Classifier flagged this as {category_value.replace('_', ' ').lower()} "
@@ -130,7 +131,9 @@ class SklearnClassifier:
 
         row = features.tocoo()
         contributions = [
-            (idx, coef[idx] * value) for idx, value in zip(row.col, row.data, strict=False) if coef[idx] > 0
+            (idx, coef[idx] * value)
+            for idx, value in zip(row.col, row.data, strict=False)
+            if coef[idx] > 0
         ]
         contributions.sort(key=lambda c: c[1], reverse=True)
 

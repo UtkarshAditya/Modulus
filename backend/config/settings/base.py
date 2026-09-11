@@ -124,6 +124,17 @@ CORS_ALLOW_CREDENTIALS = True
 
 REDIS_URL = config("REDIS_URL", default="redis://localhost:6379/0")
 
+# Separate logical DB (1, not Celery's 0) so cache keys and broker/result
+# keys never share a keyspace, even though they're the same Redis instance.
+CACHE_REDIS_URL = config("CACHE_REDIS_URL", default=REDIS_URL.rsplit("/", 1)[0] + "/1")
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": CACHE_REDIS_URL,
+    }
+}
+
 CELERY_BROKER_URL = config("CELERY_BROKER_URL", default=REDIS_URL)
 CELERY_RESULT_BACKEND = config("CELERY_RESULT_BACKEND", default=REDIS_URL)
 CELERY_ACCEPT_CONTENT = ["json"]

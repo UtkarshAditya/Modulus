@@ -54,10 +54,17 @@ class Command(BaseCommand):
                 "is_superuser": True,
             },
         )
+        # Always (re-)set the password rather than guarding on
+        # has_usable_password(): a user created via get_or_create()
+        # without going through create_user() ends up with an empty
+        # password field, which has_usable_password() treats as usable
+        # (it only special-cases Django's own "!"-prefixed unusable
+        # marker) — so the guard silently never fired and demo_employer's
+        # password was never actually set. Re-setting every run is
+        # idempotent and costs nothing.
         for user in (employer, moderator, admin):
-            if not user.has_usable_password():
-                user.set_password("password123!")
-                user.save(update_fields=["password"])
+            user.set_password("password123!")
+            user.save(update_fields=["password"])
         return employer, moderator, admin
 
     def _seed_postings(self, employer: User) -> list[JobPosting]:

@@ -69,6 +69,7 @@ class RuleHit:
     category: Category
     severity: Severity
     source: str = "RULE"
+    confidence: float = 1.0
     evidence: list[Evidence] = field(default_factory=list)
     reason: str = ""
     contributing_terms: list[dict] = field(default_factory=list)

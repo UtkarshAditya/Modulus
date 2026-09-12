@@ -46,7 +46,11 @@ _ROUTING_TO_STATUS = {
 
 @shared_task(bind=True, max_retries=2, default_retry_delay=10)
 def run_moderation_task(self, run_id: int) -> None:
+    # run_id is the correlation id threaded through every log line for
+    # this run's lifecycle — the thing to grep for when tracing one
+    # posting's path through an async pipeline across process boundaries.
     run = ModerationRun.objects.select_related("posting").get(pk=run_id)
+    logger.info("run %s: starting for posting #%s", run_id, run.posting_id)
     run.status = ModerationRun.Status.RUNNING
     run.started_at = timezone.now()
     run.save(update_fields=["status", "started_at"])
@@ -56,7 +60,7 @@ def run_moderation_task(self, run_id: int) -> None:
     except (
         Exception
     ) as exc:  # noqa: BLE001 - deliberately broad: any failure routes to human review
-        logger.exception("Moderation run %s failed", run_id)
+        logger.exception("run %s: failed", run_id)
         _mark_failed(run, exc)
         raise
 
@@ -123,6 +127,15 @@ def _execute(run: ModerationRun) -> None:
             },
         )
 
+    logger.info(
+        "run %s: routed %s (risk_score=%s, %d flags, %dms)",
+        run.pk,
+        fusion_result.routing,
+        fusion_result.risk_score,
+        len(all_hits),
+        run.duration_ms,
+    )
+
 
 def _mark_failed(run: ModerationRun, exc: Exception) -> None:
     finished_at = timezone.now()
@@ -145,3 +158,17 @@ def _mark_failed(run: ModerationRun, exc: Exception) -> None:
         object_id=str(posting.pk),
         after={"run_id": run.pk, "error": str(exc)},
     )
+
+
+@shared_task
+def export_training_labels_task() -> int:
+    """Nightly (see CELERY_BEAT_SCHEDULE): regenerates
+    ml/data/exported_labels.jsonl from moderator decisions made so far.
+    Growing the labelled pool only — retraining on it stays the manual
+    `python ml/train.py` command per docs/PLAN.md.
+    """
+    from apps.moderation.exports import write_export
+
+    count = write_export()
+    logger.info("export_training_labels_task: wrote %d labelled examples", count)
+    return count

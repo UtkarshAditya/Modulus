@@ -49,6 +49,11 @@ from apps.moderation.engine.classifier import (  # noqa: E402
 from apps.moderation.engine.rules.base import Severity  # noqa: E402
 
 DATA_PATH = Path(__file__).parent / "data" / "seed.jsonl"
+# Written by apps.moderation.exports (Phase 7) from real moderator
+# decisions — see export_training_labels_task / the management command
+# of the same name. Absent on a fresh checkout; that's fine, see
+# load_all_examples().
+EXPORTED_LABELS_PATH = Path(__file__).parent / "data" / "exported_labels.jsonl"
 
 CATEGORY_VALUES = [c.value for c in MODEL_CATEGORIES]
 GATED_SEVERITIES = {Severity.CRITICAL, Severity.HIGH}
@@ -73,6 +78,21 @@ def load_examples(path: Path = DATA_PATH) -> tuple[list[str], list[list[str]]]:
             submission = SimpleNamespace(title=example["title"], description=example["description"])
             texts.append(extract_text(submission))
             labels.append(example["labels"])
+    return texts, labels
+
+
+def load_all_examples() -> tuple[list[str], list[list[str]]]:
+    """The seed corpus plus any real moderator-decision-derived labels
+    exported so far — what an actual training run should use. Tests
+    exercise `load_examples()` alone against the seed corpus so they
+    aren't affected by whatever has or hasn't been exported in a given
+    environment.
+    """
+    texts, labels = load_examples(DATA_PATH)
+    if EXPORTED_LABELS_PATH.exists():
+        more_texts, more_labels = load_examples(EXPORTED_LABELS_PATH)
+        texts += more_texts
+        labels += more_labels
     return texts, labels
 
 
@@ -217,7 +237,7 @@ def main():
     parser.add_argument("--no-promote", action="store_true")
     args = parser.parse_args()
 
-    texts, labels = load_examples()
+    texts, labels = load_all_examples()
     bundle, eval_report = train_and_evaluate(texts, labels)
     print_report(eval_report)
 

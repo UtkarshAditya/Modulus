@@ -74,6 +74,20 @@ services:
       redis:
         condition: service_healthy
 
+  flower:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.backend
+    command: sh -c "celery -A config flower --port=5555 --basic_auth=$${FLOWER_BASIC_AUTH}"
+    env_file: ../.env
+    volumes:
+      - ../backend:/app
+    ports:
+      - "5555:5555"
+    depends_on:
+      redis:
+        condition: service_healthy
+
   frontend:
     build:
       context: ..

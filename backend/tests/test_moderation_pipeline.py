@@ -133,3 +133,33 @@ def test_engine_failure_routes_to_human_review_and_never_silently_approves(monke
     assert "simulated engine failure" in run.error
     assert posting.status == JobPosting.Status.IN_REVIEW
     assert posting.decided_at is None
+
+
+def test_resubmitting_with_unchanged_content_is_a_noop():
+    """Phase 7 idempotency: a PATCH that doesn't actually change anything
+    moderation-relevant shouldn't burn a new run, bump version, or flip
+    the posting back to PENDING.
+    """
+    posting = JobPostingFactory(
+        title="Registered Nurse",
+        description="A clean, boring posting with nothing wrong with it at all, truly.",
+        status=JobPosting.Status.DRAFT,
+    )
+    first_run = submit_for_moderation(posting)
+    posting.refresh_from_db()
+    assert posting.version == 1
+    assert posting.status == JobPosting.Status.AUTO_APPROVED
+
+    # Force it back to CHANGES_REQUESTED as if a moderator asked for an
+    # edit, then "resubmit" without actually changing anything.
+    posting.status = JobPosting.Status.CHANGES_REQUESTED
+    posting.save(update_fields=["status"])
+
+    second_run = submit_for_moderation(posting)
+    posting.refresh_from_db()
+
+    assert second_run.pk == first_run.pk
+    assert posting.version == 1
+    assert posting.moderation_runs.count() == 1
+    # Left exactly where it was — nothing was actually resubmitted.
+    assert posting.status == JobPosting.Status.CHANGES_REQUESTED

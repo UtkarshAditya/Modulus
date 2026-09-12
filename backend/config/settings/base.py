@@ -9,6 +9,7 @@ environment files or in environment variables read via decouple.
 
 from pathlib import Path
 
+from celery.schedules import crontab
 from decouple import Csv, config
 
 # backend/config/settings/base.py -> backend/
@@ -143,3 +144,55 @@ CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_TASK_ALWAYS_EAGER = config("CELERY_TASK_ALWAYS_EAGER", default=False, cast=bool)
 CELERY_TASK_EAGER_PROPAGATES = True
+
+CELERY_BEAT_SCHEDULE = {
+    "export-training-labels-nightly": {
+        "task": "apps.moderation.tasks.export_training_labels_task",
+        "schedule": crontab(hour=2, minute=0),
+    },
+}
+
+# --- Logging -----------------------------------------------------------
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "default": {
+            "format": "%(asctime)s %(levelname)s %(name)s: %(message)s",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "default",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "INFO",
+    },
+    "loggers": {
+        "django": {"handlers": ["console"], "level": "INFO", "propagate": False},
+        # apps.* loggers (e.g. apps.moderation.tasks) use the run id as a
+        # correlation id in the message itself — see that module's
+        # docstring — so the default formatter is enough without a
+        # per-record filter.
+        "apps": {"handlers": ["console"], "level": "INFO", "propagate": False},
+    },
+}
+
+# --- Error tracking (optional) ------------------------------------------
+
+SENTRY_DSN = config("SENTRY_DSN", default="")
+if SENTRY_DSN:
+    import sentry_sdk
+    from sentry_sdk.integrations.celery import CeleryIntegration
+    from sentry_sdk.integrations.django import DjangoIntegration
+
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        integrations=[DjangoIntegration(), CeleryIntegration()],
+        traces_sample_rate=config("SENTRY_TRACES_SAMPLE_RATE", default=0.0, cast=float),
+        environment=config("SENTRY_ENVIRONMENT", default="development"),
+    )

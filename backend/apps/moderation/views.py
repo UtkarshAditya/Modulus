@@ -1,4 +1,4 @@
-from django.db.models import F, OuterRef, Subquery
+from django.db.models import Exists, F, OuterRef, Subquery
 from django.shortcuts import get_object_or_404
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
@@ -8,7 +8,7 @@ from apps.moderation.services import apply_decision
 from apps.postings.models import JobPosting
 
 from .claims import acquire_claim, release_claim
-from .models import Flag, ModerationRun
+from .models import Decision, Flag, ModerationRun
 from .permissions import IsModeratorOrAdmin
 from .serializers import (
     CasePostingSerializer,
@@ -27,6 +27,9 @@ def get_queue_queryset(params):
     latest_run_qs = ModerationRun.objects.filter(posting=OuterRef("pk")).order_by(
         "-started_at", "-id"
     )
+    escalated_qs = Decision.objects.filter(
+        run__posting=OuterRef("pk"), action=Decision.Action.ESCALATE
+    )
     queryset = (
         JobPosting.objects.filter(status=JobPosting.Status.IN_REVIEW)
         .select_related("submitter")
@@ -34,6 +37,10 @@ def get_queue_queryset(params):
             latest_run_id=Subquery(latest_run_qs.values("id")[:1]),
             risk_score=Subquery(latest_run_qs.values("risk_score")[:1]),
             routing=Subquery(latest_run_qs.values("routing")[:1]),
+            # A posting an earlier moderator escalated stays IN_REVIEW —
+            # this is the only thing that distinguishes "someone already
+            # looked at this and wanted a second opinion" from a fresh case.
+            is_escalated=Exists(escalated_qs),
         )
     )
 
@@ -59,6 +66,10 @@ def get_queue_queryset(params):
         queryset = queryset.filter(risk_score__lte=float(max_score))
 
     ordering = params.get("ordering") or "submitted_at"  # oldest first = highest SLA risk
+    if not params.get("ordering"):
+        # Escalated cases jump the queue by default — a second-opinion
+        # request from another moderator outranks a fresh case's age.
+        return queryset.order_by("-is_escalated", ordering, "id").distinct()
     return queryset.order_by(ordering, "id").distinct()
 
 

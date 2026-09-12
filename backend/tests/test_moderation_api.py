@@ -4,7 +4,8 @@ from rest_framework.test import APIClient
 
 from apps.accounts.factories import EmployerFactory, ModeratorFactory
 from apps.moderation.claims import get_claim_holder
-from apps.moderation.services import submit_for_moderation
+from apps.moderation.models import Decision
+from apps.moderation.services import apply_decision, submit_for_moderation
 from apps.policies.factories import PolicyFactory
 from apps.policies.models import Policy
 from apps.postings.factories import JobPostingFactory
@@ -181,3 +182,32 @@ def test_mark_flag_false_positive(moderator_client, in_review_posting):
     assert response.status_code == 200
     flag.refresh_from_db()
     assert flag.is_false_positive is True
+
+
+def test_escalated_posting_is_flagged_and_sorted_first_in_queue(
+    moderator_client, in_review_posting
+):
+    client, moderator = moderator_client
+    apply_decision(in_review_posting, moderator=moderator, action=Decision.Action.ESCALATE)
+    in_review_posting.refresh_from_db()
+    assert in_review_posting.status == JobPosting.Status.IN_REVIEW  # still in the queue
+
+    # A second, fresh case, submitted after the escalation.
+    other_employer = EmployerFactory(username="employer4")
+    other_posting = JobPostingFactory(
+        submitter=other_employer,
+        title="Data Entry Clerk",
+        description=MLM_DESCRIPTION,
+        status=JobPosting.Status.DRAFT,
+    )
+    submit_for_moderation(other_posting)
+
+    response = client.get(reverse("moderation-queue-list"))
+    rows = _rows(response.data)
+    row_ids = [row["id"] for row in rows]
+
+    assert row_ids[0] == in_review_posting.pk  # escalated jumps the queue despite being older...
+    escalated_row = next(r for r in rows if r["id"] == in_review_posting.pk)
+    other_row = next(r for r in rows if r["id"] == other_posting.pk)
+    assert escalated_row["is_escalated"] is True
+    assert other_row["is_escalated"] is False

@@ -124,6 +124,7 @@ export interface QueueRow {
   top_category: string | null
   flag_count: number
   claimed_by: number | null
+  is_escalated: boolean
 }
 
 export interface CasePosting {

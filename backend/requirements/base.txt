@@ -12,3 +12,9 @@ python-decouple>=3.8,<3.9
 # not just for offline training, so this lives in base.txt not dev.txt.
 scikit-learn>=1.5,<1.6
 joblib>=1.4,<1.5
+
+# Phase 7 hardening: error tracking (no-op until SENTRY_DSN is set) and
+# Celery task monitoring (runs as its own `flower` compose service, but
+# reuses this image, so the dependency lives here).
+sentry-sdk>=2.18,<2.19
+flower>=2.0,<2.1

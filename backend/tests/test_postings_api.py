@@ -164,3 +164,40 @@ def test_anonymous_cannot_access_postings_api():
     client = APIClient()
     response = client.get(reverse("posting-list"))
     assert response.status_code in (401, 403)
+
+
+def test_submission_throttle_engages_after_the_configured_rate(monkeypatch, employer_client):
+    """Phase 7: the postings-submit throttle scope has existed since
+    Phase 5 but was never actually exercised — confirm it engages rather
+    than trusting the DEFAULT_THROTTLE_RATES config alone.
+
+    Overriding settings.REST_FRAMEWORK here would *not* work even via
+    Django's `settings` fixture: DRF's ScopedRateThrottle.THROTTLE_RATES
+    is bound to api_settings.DEFAULT_THROTTLE_RATES once, at class-body
+    evaluation time when rest_framework.throttling is first imported —
+    a later setting_changed signal updates api_settings but not that
+    already-bound class attribute. Patching the class attribute directly
+    is what actually reaches the throttle a live request uses.
+    """
+    from django.core.cache import cache
+    from rest_framework.throttling import ScopedRateThrottle
+
+    monkeypatch.setattr(ScopedRateThrottle, "THROTTLE_RATES", {"postings-submit": "2/min"})
+    cache.clear()
+    client, _ = employer_client
+    payload = {
+        "company_name": "Northwind Traders",
+        "title": "Registered Nurse",
+        "description": CLEAN_DESCRIPTION,
+        "location": "Remote",
+        "employment_type": "FULL_TIME",
+        "salary_disclosed": False,
+        "apply_url": "",
+        "contact_email": "",
+    }
+
+    statuses = [
+        client.post(reverse("posting-list"), payload, format="json").status_code for _ in range(3)
+    ]
+    assert statuses[:2] == [202, 202]
+    assert statuses[2] == 429

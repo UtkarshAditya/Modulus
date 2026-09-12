@@ -28,10 +28,25 @@ _TERMINAL_STATUSES = {JobPosting.Status.APPROVED, JobPosting.Status.REJECTED}
 
 def submit_for_moderation(posting: JobPosting, *, actor=None) -> ModerationRun:
     is_resubmission = posting.moderation_runs.exists()
+    new_hash = posting.compute_content_hash()
+
+    if is_resubmission and new_hash == posting.content_hash:
+        # Idempotency: a PATCH that didn't actually change anything
+        # moderation-relevant (the submitter re-saved the same content,
+        # or only touched a field compute_content_hash() doesn't cover)
+        # shouldn't burn a new run or bump version — it would just
+        # reproduce the same flags a moderator already looked at once.
+        # Status/submitted_at are deliberately left untouched too, so the
+        # posting stays exactly where it was (e.g. still CHANGES_REQUESTED)
+        # rather than flipping to PENDING for work that never happens.
+        existing_run = posting.moderation_runs.order_by("-started_at", "-id").first()
+        if existing_run is not None:
+            return existing_run
+
     if is_resubmission:
         posting.version += 1
 
-    posting.content_hash = posting.compute_content_hash()
+    posting.content_hash = new_hash
     posting.status = JobPosting.Status.PENDING
     posting.submitted_at = timezone.now()
     posting.decided_at = None

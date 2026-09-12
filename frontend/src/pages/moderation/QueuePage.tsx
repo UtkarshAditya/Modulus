@@ -89,9 +89,16 @@ export function QueuePage() {
             {rows?.map((row) => (
               <tr key={row.id} className="hover:bg-slate-50">
                 <td className="px-4 py-2">
-                  <Link to={`/moderation/${row.id}`} className="font-medium text-slate-900 hover:underline">
-                    {row.title}
-                  </Link>
+                  <div className="flex items-center gap-2">
+                    <Link to={`/moderation/${row.id}`} className="font-medium text-slate-900 hover:underline">
+                      {row.title}
+                    </Link>
+                    {row.is_escalated && (
+                      <span className="rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-800">
+                        Escalated
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-slate-500">
                     {row.company_name} · {row.submitter}
                   </p>

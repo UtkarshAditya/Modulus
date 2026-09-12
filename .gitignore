@@ -13,6 +13,10 @@ backend/htmlcov/
 # ML artifacts (checksummed, versioned separately from git)
 backend/ml/artifacts/
 
+# Regenerated nightly from moderator decisions (apps.moderation.exports) —
+# derived data, not source, unlike ml/data/seed.jsonl which stays tracked.
+backend/ml/data/exported_labels.jsonl
+
 # Celery beat's runtime schedule db, written into the bind-mounted backend/
 # directory by the beat container — not source, regenerated on every run.
 backend/celerybeat-schedule*
@@ -35,6 +39,10 @@ Thumbs.db
 
 # --- Claude Code (harness-local, not project source) --------------------------
 .claude/
+
+# --- Session-local continuity notes (not project source, see the file's own
+# header) — docs/PLAN.md is the durable, tracked plan. ------------------------
+docs/CURRENT_CONTEXT.md
 
 # --- Docker --------------------------------------------------------------------
 infra/*.log

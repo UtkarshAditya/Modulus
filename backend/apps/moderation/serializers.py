@@ -87,6 +87,7 @@ class QueuePostingSerializer(serializers.Serializer):
     top_category = serializers.SerializerMethodField()
     flag_count = serializers.SerializerMethodField()
     claimed_by = serializers.SerializerMethodField()
+    is_escalated = serializers.BooleanField()
 
     def get_top_category(self, posting):
         flags = getattr(posting, "_prefetched_top_flags", None)

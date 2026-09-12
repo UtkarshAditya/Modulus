@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { ApiError } from '../api/client'
 import type { EmploymentType, JobPostingInput } from '../types'
+import '../styles/modulus.css'
 
 const EMPLOYMENT_TYPES: { value: EmploymentType; label: string }[] = [
   { value: 'FULL_TIME', label: 'Full-time' },
@@ -74,27 +75,15 @@ export function PostingForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      {formError && (
-        <div className="rounded-md bg-red-50 px-4 py-3 text-sm text-red-800">{formError}</div>
-      )}
+    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      {formError && <div className="m-error-banner">{formError}</div>}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         <Field label="Company name" error={fieldError('company_name')}>
-          <input
-            required
-            className="input"
-            value={values.company_name}
-            onChange={(e) => update('company_name', e.target.value)}
-          />
+          <input required value={values.company_name} onChange={(e) => update('company_name', e.target.value)} />
         </Field>
         <Field label="Job title" error={fieldError('title')}>
-          <input
-            required
-            className="input"
-            value={values.title}
-            onChange={(e) => update('title', e.target.value)}
-          />
+          <input required value={values.title} onChange={(e) => update('title', e.target.value)} />
         </Field>
       </div>
 
@@ -102,23 +91,17 @@ export function PostingForm({
         <textarea
           required
           rows={6}
-          className="input"
           value={values.description}
           onChange={(e) => update('description', e.target.value)}
         />
       </Field>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         <Field label="Location" error={fieldError('location')}>
-          <input
-            className="input"
-            value={values.location}
-            onChange={(e) => update('location', e.target.value)}
-          />
+          <input value={values.location} onChange={(e) => update('location', e.target.value)} />
         </Field>
         <Field label="Employment type" error={fieldError('employment_type')}>
           <select
-            className="input"
             value={values.employment_type}
             onChange={(e) => update('employment_type', e.target.value as EmploymentType)}
           >
@@ -131,11 +114,10 @@ export function PostingForm({
         </Field>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
         <Field label="Minimum salary" error={fieldError('salary_min')}>
           <input
             type="number"
-            className="input"
             value={values.salary_min ?? ''}
             onChange={(e) => update('salary_min', e.target.value ? Number(e.target.value) : null)}
           />
@@ -143,21 +125,16 @@ export function PostingForm({
         <Field label="Maximum salary" error={fieldError('salary_max')}>
           <input
             type="number"
-            className="input"
             value={values.salary_max ?? ''}
             onChange={(e) => update('salary_max', e.target.value ? Number(e.target.value) : null)}
           />
         </Field>
         <Field label="Currency" error={fieldError('currency')}>
-          <input
-            className="input"
-            value={values.currency}
-            onChange={(e) => update('currency', e.target.value)}
-          />
+          <input value={values.currency} onChange={(e) => update('currency', e.target.value)} />
         </Field>
       </div>
 
-      <label className="flex items-center gap-2 text-sm text-slate-700">
+      <label className="m-checkbox-field">
         <input
           type="checkbox"
           checked={values.salary_disclosed}
@@ -166,30 +143,16 @@ export function PostingForm({
         I'm disclosing compensation for this role
       </label>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         <Field label="Apply URL" error={fieldError('apply_url')}>
-          <input
-            type="url"
-            className="input"
-            value={values.apply_url}
-            onChange={(e) => update('apply_url', e.target.value)}
-          />
+          <input type="url" value={values.apply_url} onChange={(e) => update('apply_url', e.target.value)} />
         </Field>
         <Field label="Contact email" error={fieldError('contact_email')}>
-          <input
-            type="email"
-            className="input"
-            value={values.contact_email}
-            onChange={(e) => update('contact_email', e.target.value)}
-          />
+          <input type="email" value={values.contact_email} onChange={(e) => update('contact_email', e.target.value)} />
         </Field>
       </div>
 
-      <button
-        type="submit"
-        disabled={submitting}
-        className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50"
-      >
+      <button type="submit" disabled={submitting} className="m-btn m-btn-solid" style={{ alignSelf: 'flex-start' }}>
         {submitting ? 'Submitting…' : submitLabel}
       </button>
     </form>
@@ -206,10 +169,10 @@ function Field({
   children: React.ReactNode
 }) {
   return (
-    <label className="block text-sm">
-      <span className="mb-1 block font-medium text-slate-700">{label}</span>
+    <label className="m-field">
+      <span className="m-field-label">{label}</span>
       {children}
-      {error && <span className="mt-1 block text-xs text-red-600">{error}</span>}
+      {error && <span className="m-field-error">{error}</span>}
     </label>
   )
 }

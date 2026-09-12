@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { postings } from '../../api/client'
 import { PostingForm } from '../../components/PostingForm'
 import type { JobPostingInput } from '../../types'
+import '../../styles/modulus.css'
 
 export function NewPostingPage() {
   const navigate = useNavigate()
@@ -12,12 +13,14 @@ export function NewPostingPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl">
-      <h1 className="mb-1 text-xl font-semibold text-slate-900">Submit a job posting</h1>
-      <p className="mb-6 text-sm text-slate-500">
-        Your posting is analyzed automatically as soon as you submit it. Most postings are
-        approved or rejected within seconds; anything ambiguous goes to a human moderator.
-      </p>
+    <div>
+      <div style={{ marginBottom: 24 }}>
+        <h1 style={{ fontSize: '1.5rem', fontWeight: 700 }}>Submit a job posting</h1>
+        <p className="m-page-sub">
+          Your posting is analyzed automatically as soon as you submit it. Most postings are
+          approved or rejected within seconds; anything ambiguous goes to a human moderator.
+        </p>
+      </div>
       <PostingForm onSubmit={handleSubmit} submitLabel="Submit for review" />
     </div>
   )

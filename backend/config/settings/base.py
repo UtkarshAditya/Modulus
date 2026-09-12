@@ -112,6 +112,7 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_THROTTLE_RATES": {
         "postings-submit": "20/hour",
+        "signup": "10/hour",
     },
 }
 

@@ -21,6 +21,45 @@ def test_me_when_anonymous():
     assert response.data == {"authenticated": False}
 
 
+def test_signup_creates_employer_and_logs_in():
+    client = APIClient(enforce_csrf_checks=False)
+    response = client.post(
+        reverse("auth-signup"),
+        {"username": "newgrad", "email": "newgrad@example.com", "password": "correct-horse-battery"},
+        format="json",
+    )
+    assert response.status_code == 201
+    assert response.data["username"] == "newgrad"
+    assert response.data["role"] == "EMPLOYER"
+
+    me = client.get(reverse("auth-me"))
+    assert me.data["authenticated"] is True
+    assert me.data["username"] == "newgrad"
+
+
+def test_signup_rejects_duplicate_username():
+    EmployerFactory(username="taken")
+    client = APIClient(enforce_csrf_checks=False)
+    response = client.post(
+        reverse("auth-signup"),
+        {"username": "taken", "email": "someone-else@example.com", "password": "correct-horse-battery"},
+        format="json",
+    )
+    assert response.status_code == 400
+    assert "username" in response.data
+
+
+def test_signup_rejects_weak_password():
+    client = APIClient(enforce_csrf_checks=False)
+    response = client.post(
+        reverse("auth-signup"),
+        {"username": "weakpass", "email": "weakpass@example.com", "password": "password"},
+        format="json",
+    )
+    assert response.status_code == 400
+    assert "password" in response.data
+
+
 def test_login_with_valid_credentials():
     EmployerFactory(username="alice")
     client = APIClient(enforce_csrf_checks=False)

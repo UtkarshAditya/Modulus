@@ -74,6 +74,8 @@ export const auth = {
   me: () => request<User>('/api/auth/me/'),
   login: (username: string, password: string) =>
     request<User>('/api/auth/login/', { method: 'POST', body: { username, password } }),
+  signup: (username: string, email: string, password: string) =>
+    request<User>('/api/auth/signup/', { method: 'POST', body: { username, email, password } }),
   logout: () => request<void>('/api/auth/logout/', { method: 'POST' }),
 }
 

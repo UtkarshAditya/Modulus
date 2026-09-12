@@ -1,0 +1,32 @@
+# Shared image for the backend, worker, and beat services — they differ
+# only in the command docker-compose.yml gives them, not in the image.
+FROM python:3.13-slim AS base
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libpq5 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+FROM base AS build-deps
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends build-essential libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+COPY backend/requirements/ requirements/
+ARG REQUIREMENTS_FILE=requirements/dev.txt
+RUN pip install -r ${REQUIREMENTS_FILE}
+
+FROM base
+COPY --from=build-deps /usr/local/lib/python3.13/site-packages /usr/local/lib/python3.13/site-packages
+COPY --from=build-deps /usr/local/bin /usr/local/bin
+COPY backend/ .
+
+RUN useradd --create-home appuser
+USER appuser
+
+EXPOSE 8000
+CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000"]

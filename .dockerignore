@@ -1,0 +1,19 @@
+# Compose builds use the repo root as context (`context: ..`), so this
+# file matters a lot: without it, COPY backend/ . and COPY frontend/ .
+# would bake the host's .venv / node_modules (platform-mismatched
+# binaries) straight into the image, and bloat every build's context
+# upload besides.
+.git/
+**/.venv/
+**/node_modules/
+**/__pycache__/
+**/*.pyc
+backend/staticfiles/
+backend/.pytest_cache/
+backend/ml/artifacts/
+frontend/dist/
+docs/
+*.md
+.env
+.env.*
+!.env.example

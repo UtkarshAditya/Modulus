@@ -6,7 +6,6 @@ export function Layout() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const isModerator = user?.role === 'MODERATOR' || user?.role === 'ADMIN'
-  const homePath = isModerator ? '/moderation' : '/postings'
 
   async function handleLogout() {
     await logout()
@@ -16,7 +15,7 @@ export function Layout() {
   return (
     <div className="modulus-page" style={{ minHeight: '100vh' }}>
       <header className="m-app-header">
-        <Link to={homePath} className="m-wordmark">
+        <Link to="/" className="m-wordmark">
           <span className="m-bar">|</span>MODULUS<span className="m-bar">|</span>
         </Link>
         <nav className="m-app-nav">
